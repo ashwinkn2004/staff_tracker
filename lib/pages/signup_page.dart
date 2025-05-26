@@ -1,7 +1,11 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:lottie/lottie.dart';
 import 'package:dropdown_below/dropdown_below.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 
 class SignupPage extends StatefulWidget {
   const SignupPage({super.key});
@@ -14,7 +18,8 @@ class _SignupPageState extends State<SignupPage> {
   final _formKey = GlobalKey<FormState>();
   final TextEditingController _emailController = TextEditingController();
   final TextEditingController _passwordController = TextEditingController();
-  final TextEditingController _confirmPasswordController = TextEditingController();
+  final TextEditingController _confirmPasswordController =
+      TextEditingController();
   bool _obscurePassword = true;
   bool _obscureConfirmPassword = true;
 
@@ -44,11 +49,77 @@ class _SignupPageState extends State<SignupPage> {
     });
   }
 
-  void _signUp() {
+  void _signUp() async {
     if (_formKey.currentState!.validate() && _selectedRole != null) {
-      String email = _emailController.text.trim();
-      String role = _selectedRole['keyword'];
-      print('Signed up: $email as $role');
+      try {
+        String email = _emailController.text.trim();
+        String password = _passwordController.text;
+        String role = _selectedRole['keyword'].toLowerCase();
+
+        // Show loading indicator
+        showDialog(
+          context: context,
+          barrierDismissible: false,
+          builder: (context) =>
+              const Center(child: CircularProgressIndicator()),
+        );
+
+        // 1. Create user in Firebase Authentication
+        UserCredential userCredential = await FirebaseAuth.instance
+            .createUserWithEmailAndPassword(email: email, password: password)
+            .timeout(const Duration(seconds: 10));
+
+        // 2. Create document in the appropriate collection
+        await FirebaseFirestore.instance
+            .collection(role)
+            .doc(userCredential.user!.uid)
+            .set({
+              'mail': email,
+              'uid': userCredential.user!.uid,
+              'role': role,
+              'pass': password,
+              'createdAt': FieldValue.serverTimestamp(),
+            });
+
+        // Hide loading indicator
+        Navigator.of(context).pop();
+
+        // Show success message
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Successfully signed up as $role')),
+        );
+
+        print('Successfully signed up $email as $role');
+      } on FirebaseAuthException catch (e) {
+        Navigator.of(context).pop(); // Hide loading indicator
+        String errorMessage = 'Signup failed';
+
+        if (e.code == 'weak-password') {
+          errorMessage = 'The password provided is too weak';
+        } else if (e.code == 'email-already-in-use') {
+          errorMessage = 'The account already exists for that email';
+        } else if (e.code == 'invalid-email') {
+          errorMessage = 'The email address is invalid';
+        } else if (e.code == 'operation-not-allowed') {
+          errorMessage = 'Email/password accounts are not enabled';
+        }
+
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text(errorMessage)));
+        print('Firebase Auth Error: ${e.message}');
+      } on TimeoutException {
+        Navigator.of(context).pop(); // Hide loading indicator
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(const SnackBar(content: Text('Connection timed out')));
+      } catch (e) {
+        Navigator.of(context).pop(); // Hide loading indicator
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text('Error: ${e.toString()}')));
+        print('Error: $e');
+      }
     } else {
       setState(() {
         _showRoleError = _selectedRole == null;
@@ -67,20 +138,36 @@ class _SignupPageState extends State<SignupPage> {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               const SizedBox(height: 20),
-              Center(child: Lottie.asset('assets/signup.json', height: 250, width: 300)),
+              Center(
+                child: Lottie.asset(
+                  'assets/signup.json',
+                  height: 250,
+                  width: 300,
+                ),
+              ),
               _buildTitle("Sign Up"),
               _buildTextField("Email Address", _emailController),
-              _buildPasswordField("Password", _passwordController, _obscurePassword, () {
-                setState(() {
-                  _obscurePassword = !_obscurePassword;
-                });
-              }),
+              _buildPasswordField(
+                "Password",
+                _passwordController,
+                _obscurePassword,
+                () {
+                  setState(() {
+                    _obscurePassword = !_obscurePassword;
+                  });
+                },
+              ),
               const SizedBox(height: 10),
-              _buildPasswordField("Confirm Password", _confirmPasswordController, _obscureConfirmPassword, () {
-                setState(() {
-                  _obscureConfirmPassword = !_obscureConfirmPassword;
-                });
-              }),
+              _buildPasswordField(
+                "Confirm Password",
+                _confirmPasswordController,
+                _obscureConfirmPassword,
+                () {
+                  setState(() {
+                    _obscureConfirmPassword = !_obscureConfirmPassword;
+                  });
+                },
+              ),
               const SizedBox(height: 10),
               _buildDropdown(),
               const SizedBox(height: 20),
@@ -116,8 +203,12 @@ class _SignupPageState extends State<SignupPage> {
     );
   }
 
-  Widget _buildPasswordField(String label, TextEditingController controller,
-      bool obscureText, VoidCallback toggleVisibility) {
+  Widget _buildPasswordField(
+    String label,
+    TextEditingController controller,
+    bool obscureText,
+    VoidCallback toggleVisibility,
+  ) {
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 20),
       child: TextFormField(
@@ -125,14 +216,18 @@ class _SignupPageState extends State<SignupPage> {
         obscureText: obscureText,
         decoration: _inputDecoration(label).copyWith(
           suffixIcon: IconButton(
-            icon: Icon(obscureText ? Icons.visibility_off : Icons.visibility, color: Colors.grey),
+            icon: Icon(
+              obscureText ? Icons.visibility_off : Icons.visibility,
+              color: Colors.grey,
+            ),
             onPressed: toggleVisibility,
           ),
         ),
         style: GoogleFonts.raleway(),
         validator: (value) {
           if (value == null || value.isEmpty) return 'Please enter $label';
-          if (label == "Confirm Password" && value != _passwordController.text) {
+          if (label == "Confirm Password" &&
+              value != _passwordController.text) {
             return 'Passwords do not match';
           }
           return null;
@@ -149,8 +244,16 @@ class _SignupPageState extends State<SignupPage> {
         children: [
           DropdownBelow(
             itemWidth: 200,
-            itemTextstyle: GoogleFonts.raleway(fontSize: 14, fontWeight: FontWeight.w400, color: Colors.grey),
-            boxTextstyle: GoogleFonts.raleway(fontSize: 14, fontWeight: FontWeight.w400, color: Colors.grey),
+            itemTextstyle: GoogleFonts.raleway(
+              fontSize: 14,
+              fontWeight: FontWeight.w400,
+              color: Colors.grey,
+            ),
+            boxTextstyle: GoogleFonts.raleway(
+              fontSize: 14,
+              fontWeight: FontWeight.w400,
+              color: Colors.grey,
+            ),
             boxPadding: const EdgeInsets.fromLTRB(13, 12, 0, 12),
             boxWidth: 400,
             boxHeight: 45,
@@ -212,7 +315,10 @@ class _SignupPageState extends State<SignupPage> {
     return Row(
       mainAxisAlignment: MainAxisAlignment.center,
       children: [
-        Text("Already have an account? ", style: GoogleFonts.raleway(fontSize: 15, color: Colors.grey)),
+        Text(
+          "Already have an account? ",
+          style: GoogleFonts.raleway(fontSize: 15, color: Colors.grey),
+        ),
         TextButton(
           onPressed: () => Navigator.pushNamed(context, '/login'),
           child: Text(

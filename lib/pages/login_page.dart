@@ -1,6 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:staff_tracking/utils/routes.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:firebase_auth/firebase_auth.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:staff_tracking/pages/admin_page.dart';
+import 'package:staff_tracking/pages/staff_page.dart';
 
 class LoginScreen extends StatefulWidget {
   const LoginScreen({super.key});
@@ -14,16 +18,77 @@ class _LoginScreenState extends State<LoginScreen> {
   final TextEditingController _emailController = TextEditingController();
   final TextEditingController _passwordController = TextEditingController();
 
-  void _login() {
+  void _login() async {
     String email = _emailController.text.trim();
     String password = _passwordController.text.trim();
 
-    if (email.isNotEmpty && password.isNotEmpty) {
-      print("Logged in: $email");
-    } else {
+    if (email.isEmpty || password.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text("Please enter email and password")),
       );
+      return;
+    }
+
+    try {
+      // Show loading indicator
+      showDialog(
+        context: context,
+        barrierDismissible: false,
+        builder: (context) => const Center(child: CircularProgressIndicator()),
+      );
+
+      // Authenticate user
+      UserCredential userCredential = await FirebaseAuth.instance
+          .signInWithEmailAndPassword(email: email, password: password);
+
+      // Get user role from Firestore
+      DocumentSnapshot adminDoc = await FirebaseFirestore.instance
+          .collection('admin')
+          .doc(userCredential.user!.uid)
+          .get();
+
+      DocumentSnapshot staffDoc = await FirebaseFirestore.instance
+          .collection('staff')
+          .doc(userCredential.user!.uid)
+          .get();
+
+      // Hide loading indicator
+      Navigator.of(context).pop();
+
+      // Redirect based on role
+      if (adminDoc.exists) {
+        Navigator.pushReplacement(
+          context,
+          MaterialPageRoute(builder: (context) => AdminPage()),
+        );
+      } else if (staffDoc.exists) {
+        Navigator.pushReplacement(
+          context,
+          MaterialPageRoute(builder: (context) => StaffPage()),
+        );
+      } else {
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(const SnackBar(content: Text("User role not found")));
+      }
+    } on FirebaseAuthException catch (e) {
+      Navigator.of(context).pop(); // Hide loading indicator
+      String errorMessage;
+      if (e.code == 'user-not-found') {
+        errorMessage = 'No user found with that email';
+      } else if (e.code == 'wrong-password') {
+        errorMessage = 'Incorrect password';
+      } else {
+        errorMessage = 'Login failed: ${e.message}';
+      }
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text(errorMessage)));
+    } catch (e) {
+      Navigator.of(context).pop(); // Hide loading indicator
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text('Error: ${e.toString()}')));
     }
   }
 
@@ -35,10 +100,7 @@ class _LoginScreenState extends State<LoginScreen> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            SizedBox(
-              height: 200,
-              width: double.infinity,
-            ),
+            SizedBox(height: 200, width: double.infinity),
             Padding(
               padding: const EdgeInsets.only(left: 20),
               child: Text(
@@ -59,11 +121,17 @@ class _LoginScreenState extends State<LoginScreen> {
                   labelStyle: GoogleFonts.raleway(color: Colors.grey),
                   enabledBorder: OutlineInputBorder(
                     borderRadius: BorderRadius.circular(10.0),
-                    borderSide: BorderSide(color: Colors.grey[400]!, width: 1.5),
+                    borderSide: BorderSide(
+                      color: Colors.grey[400]!,
+                      width: 1.5,
+                    ),
                   ),
                   focusedBorder: OutlineInputBorder(
                     borderRadius: BorderRadius.circular(10.0),
-                    borderSide: BorderSide(color: Colors.grey[400]!, width: 1.5),
+                    borderSide: BorderSide(
+                      color: Colors.grey[400]!,
+                      width: 1.5,
+                    ),
                   ),
                 ),
               ),
@@ -79,15 +147,23 @@ class _LoginScreenState extends State<LoginScreen> {
                   labelStyle: GoogleFonts.raleway(color: Colors.grey),
                   enabledBorder: OutlineInputBorder(
                     borderRadius: BorderRadius.circular(10.0),
-                    borderSide: BorderSide(color: Colors.grey[400]!, width: 1.5),
+                    borderSide: BorderSide(
+                      color: Colors.grey[400]!,
+                      width: 1.5,
+                    ),
                   ),
                   focusedBorder: OutlineInputBorder(
                     borderRadius: BorderRadius.circular(10.0),
-                    borderSide: BorderSide(color: Colors.grey[400]!, width: 1.5),
+                    borderSide: BorderSide(
+                      color: Colors.grey[400]!,
+                      width: 1.5,
+                    ),
                   ),
                   suffixIcon: IconButton(
                     icon: Icon(
-                      _isPasswordVisible ? Icons.visibility : Icons.visibility_off,
+                      _isPasswordVisible
+                          ? Icons.visibility
+                          : Icons.visibility_off,
                       color: Colors.grey,
                     ),
                     onPressed: () {
@@ -150,7 +226,10 @@ class _LoginScreenState extends State<LoginScreen> {
                   padding: const EdgeInsets.only(top: 80),
                   child: Text(
                     "Don't have an account ? ",
-                    style: GoogleFonts.raleway(fontSize: 15, color: Colors.grey),
+                    style: GoogleFonts.raleway(
+                      fontSize: 15,
+                      color: Colors.grey,
+                    ),
                   ),
                 ),
                 Padding(
