@@ -1,3 +1,5 @@
+// ignore_for_file: use_build_context_synchronously
+
 import 'dart:async';
 
 import 'package:flutter/material.dart';
@@ -18,12 +20,12 @@ class _SignupPageState extends State<SignupPage> {
   final _formKey = GlobalKey<FormState>();
   final TextEditingController _emailController = TextEditingController();
   final TextEditingController _passwordController = TextEditingController();
-  final TextEditingController _confirmPasswordController =
-      TextEditingController();
+  final TextEditingController _confirmPasswordController =TextEditingController();
+  final TextEditingController _nameController = TextEditingController();
   bool _obscurePassword = true;
   bool _obscureConfirmPassword = true;
 
-  List _selectRoleList = [
+  final List _selectRoleList = [
     {'no': 1, 'keyword': 'Admin'},
     {'no': 2, 'keyword': 'Staff'},
   ];
@@ -55,6 +57,7 @@ class _SignupPageState extends State<SignupPage> {
         String email = _emailController.text.trim();
         String password = _passwordController.text;
         String role = _selectedRole['keyword'].toLowerCase();
+        String name = _nameController.text.trim();
 
         // Show loading indicator
         showDialog(
@@ -74,6 +77,7 @@ class _SignupPageState extends State<SignupPage> {
             .collection(role)
             .doc(userCredential.user!.uid)
             .set({
+              'adminName': name,
               'mail': email,
               'uid': userCredential.user!.uid,
               'role': role,
@@ -85,11 +89,11 @@ class _SignupPageState extends State<SignupPage> {
         Navigator.of(context).pop();
 
         // Show success message
+
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(content: Text('Successfully signed up as $role')),
         );
 
-        print('Successfully signed up $email as $role');
       } on FirebaseAuthException catch (e) {
         Navigator.of(context).pop(); // Hide loading indicator
         String errorMessage = 'Signup failed';
@@ -107,7 +111,7 @@ class _SignupPageState extends State<SignupPage> {
         ScaffoldMessenger.of(
           context,
         ).showSnackBar(SnackBar(content: Text(errorMessage)));
-        print('Firebase Auth Error: ${e.message}');
+       
       } on TimeoutException {
         Navigator.of(context).pop(); // Hide loading indicator
         ScaffoldMessenger.of(
@@ -118,7 +122,7 @@ class _SignupPageState extends State<SignupPage> {
         ScaffoldMessenger.of(
           context,
         ).showSnackBar(SnackBar(content: Text('Error: ${e.toString()}')));
-        print('Error: $e');
+       
       }
     } else {
       setState(() {
@@ -146,6 +150,7 @@ class _SignupPageState extends State<SignupPage> {
                 ),
               ),
               _buildTitle("Sign Up"),
+              _buildTextField("Name", _nameController),
               _buildTextField("Email Address", _emailController),
               _buildPasswordField(
                 "Password",

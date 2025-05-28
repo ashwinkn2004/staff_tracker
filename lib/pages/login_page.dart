@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:hive/hive.dart';
 import 'package:staff_tracking/utils/routes.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:firebase_auth/firebase_auth.dart';
@@ -30,38 +31,41 @@ class _LoginScreenState extends State<LoginScreen> {
     }
 
     try {
-      // Show loading indicator
       showDialog(
         context: context,
         barrierDismissible: false,
         builder: (context) => const Center(child: CircularProgressIndicator()),
       );
 
-      // Authenticate user
       UserCredential userCredential = await FirebaseAuth.instance
           .signInWithEmailAndPassword(email: email, password: password);
 
-      // Get user role from Firestore
+      final uid = userCredential.user!.uid;
+
       DocumentSnapshot adminDoc = await FirebaseFirestore.instance
           .collection('admin')
-          .doc(userCredential.user!.uid)
+          .doc(uid)
           .get();
 
       DocumentSnapshot staffDoc = await FirebaseFirestore.instance
           .collection('staff')
-          .doc(userCredential.user!.uid)
+          .doc(uid)
           .get();
 
-      // Hide loading indicator
       Navigator.of(context).pop();
 
-      // Redirect based on role
+      final box = Hive.box('userBox');
+
       if (adminDoc.exists) {
+        await box.put('role', 'admin');
+        await box.put('uid', uid);
         Navigator.pushReplacement(
           context,
           MaterialPageRoute(builder: (context) => AdminPage()),
         );
       } else if (staffDoc.exists) {
+        await box.put('role', 'staff');
+        await box.put('uid', uid);
         Navigator.pushReplacement(
           context,
           MaterialPageRoute(builder: (context) => StaffPage()),
@@ -72,7 +76,7 @@ class _LoginScreenState extends State<LoginScreen> {
         ).showSnackBar(const SnackBar(content: Text("User role not found")));
       }
     } on FirebaseAuthException catch (e) {
-      Navigator.of(context).pop(); // Hide loading indicator
+      Navigator.of(context).pop();
       String errorMessage;
       if (e.code == 'user-not-found') {
         errorMessage = 'No user found with that email';
@@ -85,7 +89,7 @@ class _LoginScreenState extends State<LoginScreen> {
         context,
       ).showSnackBar(SnackBar(content: Text(errorMessage)));
     } catch (e) {
-      Navigator.of(context).pop(); // Hide loading indicator
+      Navigator.of(context).pop();
       ScaffoldMessenger.of(
         context,
       ).showSnackBar(SnackBar(content: Text('Error: ${e.toString()}')));
@@ -116,6 +120,7 @@ class _LoginScreenState extends State<LoginScreen> {
               padding: const EdgeInsets.symmetric(horizontal: 20),
               child: TextFormField(
                 controller: _emailController,
+                style: GoogleFonts.raleway(),
                 decoration: InputDecoration(
                   labelText: 'Email Address',
                   labelStyle: GoogleFonts.raleway(color: Colors.grey),
@@ -141,6 +146,7 @@ class _LoginScreenState extends State<LoginScreen> {
               padding: const EdgeInsets.symmetric(horizontal: 20),
               child: TextFormField(
                 controller: _passwordController,
+                style: GoogleFonts.raleway(),
                 obscureText: !_isPasswordVisible,
                 decoration: InputDecoration(
                   labelText: 'Password',
