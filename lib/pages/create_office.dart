@@ -21,8 +21,6 @@ class _CreateOfficeLocationState extends State<CreateOfficeLocation> {
       _selectedLocation = latlng;
     });
   }
-
-  @override
   void _createLocation() async {
     String officeName = _officeNameController.text.trim();
 
@@ -70,8 +68,6 @@ class _CreateOfficeLocationState extends State<CreateOfficeLocation> {
 
   @override
   Widget build(BuildContext context) {
-    final textStyle = GoogleFonts.raleway();
-
     return Scaffold(
       appBar: AppBar(
         title: Text(
