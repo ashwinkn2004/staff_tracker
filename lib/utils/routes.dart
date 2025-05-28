@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:staff_tracking/pages/admin_page.dart';
+import 'package:staff_tracking/pages/assign_staff_location.dart';
 import 'package:staff_tracking/pages/create_office.dart';
 import 'package:staff_tracking/pages/create_staff.dart';
 import 'package:staff_tracking/pages/login_page.dart';
@@ -13,6 +14,7 @@ class Routes {
   static const String createStaff = '/createStaff';
   static const String staffPage = '/staffPage';
   static const String adminPage = '/adminPage';
+  static const String assignStaffLocation = '/assignStaffLocation';
 
   static Map<String, WidgetBuilder> getRoutes() {
     return {
@@ -22,6 +24,7 @@ class Routes {
       createStaff: (BuildContext context) => const CreateStaff(),
       staffPage: (BuildContext context) => const StaffPage(),
       adminPage: (BuildContext context) => const AdminPage(),
+      assignStaffLocation: (BuildContext context) => const AssignStaffLocation(),
     };
   }
 }

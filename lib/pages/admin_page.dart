@@ -10,12 +10,10 @@ class AdminPage extends StatefulWidget {
 }
 
 class _AdminPageState extends State<AdminPage> {
-  
-  void _logout() async{
-    Navigator.pushReplacementNamed(context, '/login');
+  void _logout() async {
     final box = Hive.box('userBox');
     await box.clear();
-
+    Navigator.pushReplacementNamed(context, '/login');
   }
 
   @override
@@ -32,56 +30,62 @@ class _AdminPageState extends State<AdminPage> {
         ),
         centerTitle: true,
         backgroundColor: Colors.white,
-        leading: IconButton(onPressed: _logout, icon: Icon(Icons.logout)),
+        leading: IconButton(
+          onPressed: _logout,
+          icon: const Icon(Icons.logout, color: Colors.black),
+        ),
       ),
       body: Container(
         color: Colors.white,
-        height: double.infinity,
-        width: double.infinity,
-        child: Padding(
-          padding: const EdgeInsets.all(16.0),
-          child: GridView.count(
-            crossAxisCount: 2,
-            mainAxisSpacing: 16,
-            crossAxisSpacing: 16,
-            children: [
-              _adminTile(
-                icon: Icons.location_on,
-                title: 'Create Office Location',
-                onTap: () {
-                  Navigator.pushNamed(context, '/createOffice');
-                },
-              ),
-              _adminTile(
-                icon: Icons.person_add,
-                title: 'Create Staff Account',
-                onTap: () {
-                  Navigator.pushNamed(context, '/createStaff');
-                },
-              ),
-              _adminTile(
-                icon: Icons.map,
-                title: 'View Live Locations',
-                onTap: () {
-                  Navigator.pushNamed(context, '/liveLocations');
-                },
-              ),
-              _adminTile(
-                icon: Icons.history,
-                title: 'Simulate Staff Movement',
-                onTap: () {
-                  Navigator.pushNamed(context, '/simulateMovement');
-                },
-              ),
-              _adminTile(
-                icon: Icons.access_time,
-                title: 'Working Hours Report',
-                onTap: () {
-                  Navigator.pushNamed(context, '/workSummary');
-                },
-              ),
-            ],
-          ),
+        padding: const EdgeInsets.all(16.0),
+        child: GridView.count(
+          crossAxisCount: 2,
+          mainAxisSpacing: 16,
+          crossAxisSpacing: 16,
+          children: [
+            _adminTile(
+              icon: Icons.location_on,
+              title: 'Create Office Location',
+              onTap: () {
+                Navigator.pushNamed(context, '/createOffice');
+              },
+            ),
+            _adminTile(
+              icon: Icons.person_add,
+              title: 'Create Staff Account',
+              onTap: () {
+                Navigator.pushNamed(context, '/createStaff');
+              },
+            ),
+            _adminTile(
+              icon: Icons.assignment_ind,
+              title: 'Assign Staff to Location',
+              onTap: () {
+                Navigator.pushNamed(context, '/assignStaffLocation');
+              },
+            ),
+            _adminTile(
+              icon: Icons.map,
+              title: 'View Live Locations',
+              onTap: () {
+                Navigator.pushNamed(context, '/liveLocations');
+              },
+            ),
+            _adminTile(
+              icon: Icons.history,
+              title: 'Simulate Staff Movement',
+              onTap: () {
+                Navigator.pushNamed(context, '/simulateMovement');
+              },
+            ),
+            _adminTile(
+              icon: Icons.access_time,
+              title: 'Working Hours Report',
+              onTap: () {
+                Navigator.pushNamed(context, '/workSummary');
+              },
+            ),
+          ],
         ),
       ),
     );
@@ -95,6 +99,7 @@ class _AdminPageState extends State<AdminPage> {
     return GestureDetector(
       onTap: onTap,
       child: Card(
+        color: Colors.white70,
         elevation: 4,
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
         child: Center(
