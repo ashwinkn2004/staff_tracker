@@ -6,6 +6,8 @@ import 'package:staff_tracking/pages/create_staff.dart';
 import 'package:staff_tracking/pages/login_page.dart';
 import 'package:staff_tracking/pages/signup_page.dart';
 import 'package:staff_tracking/pages/staff_page.dart';
+import 'package:staff_tracking/pages/view_location.dart';
+
 
 class Routes {
   static const String signUp = '/signup';
@@ -15,6 +17,8 @@ class Routes {
   static const String staffPage = '/staffPage';
   static const String adminPage = '/adminPage';
   static const String assignStaffLocation = '/assignStaffLocation';
+  static const String viewLocation = '/viewLocation';
+
 
   static Map<String, WidgetBuilder> getRoutes() {
     return {
@@ -25,6 +29,7 @@ class Routes {
       staffPage: (BuildContext context) => const StaffPage(),
       adminPage: (BuildContext context) => const AdminPage(),
       assignStaffLocation: (BuildContext context) => const AssignStaffLocation(),
+      viewLocation: (BuildContext context) => const ViewLocation(),
     };
   }
 }

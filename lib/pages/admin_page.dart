@@ -68,7 +68,7 @@ class _AdminPageState extends State<AdminPage> {
               icon: Icons.map,
               title: 'View Live Locations',
               onTap: () {
-                Navigator.pushNamed(context, '/liveLocations');
+                Navigator.pushNamed(context, '/viewLocation');
               },
             ),
             _adminTile(

@@ -31,10 +31,34 @@ class _StaffPageState extends State<StaffPage> {
 
   String? locationName;
 
+  late Box userBox;
+
   @override
   void initState() {
     super.initState();
+    _initHiveAndLoadData();
     _checkAndFetchLocation();
+  }
+
+  Future<void> _initHiveAndLoadData() async {
+    userBox = Hive.box('userBox');
+    // Load punchLog from Hive if exists
+    final savedPunchLog = userBox.get('punchLog');
+    final savedIsPunchedIn = userBox.get('isPunchedIn', defaultValue: false);
+
+    if (savedPunchLog != null) {
+      punchLog = List<Map<String, dynamic>>.from(
+        (savedPunchLog as List).map((e) => Map<String, dynamic>.from(e)),
+      );
+    }
+    setState(() {
+      isPunchedIn = savedIsPunchedIn;
+    });
+
+    // If punched in, start location tracking immediately
+    if (isPunchedIn) {
+      _startLocationTracking();
+    }
   }
 
   Future<void> _checkAndFetchLocation() async {
@@ -61,7 +85,7 @@ class _StaffPageState extends State<StaffPage> {
       locationName = doc['locationName'];
     }
 
-    _checkProximity();
+    await _checkProximity();
   }
 
   Future<void> _checkProximity() async {
@@ -90,11 +114,15 @@ class _StaffPageState extends State<StaffPage> {
     });
   }
 
-  void _togglePunch() {
+  void _togglePunch() async {
     final now = DateTime.now();
     final entryType = isPunchedIn ? 'out' : 'in';
 
     punchLog.add({'type': entryType, 'time': now});
+
+    // Save punch log & state in Hive
+    await userBox.put('punchLog', punchLog);
+    await userBox.put('isPunchedIn', !isPunchedIn);
 
     if (!isPunchedIn) {
       _startLocationTracking();
@@ -102,20 +130,49 @@ class _StaffPageState extends State<StaffPage> {
       _stopLocationTracking();
     }
 
+    // Update total worked time in Firestore
+    await _updateTotalWorkedInFirestore();
+
     setState(() {
       isPunchedIn = !isPunchedIn;
     });
   }
 
   void _startLocationTracking() {
-    locationTimer = Timer.periodic(const Duration(minutes: 2), (_) {
+    locationTimer = Timer.periodic(const Duration(minutes: 2), (_) async {
+      final permission = await Geolocator.checkPermission();
+      if (permission == LocationPermission.denied ||
+          permission == LocationPermission.deniedForever) {
+        await Geolocator.requestPermission();
+      }
+      final position = await Geolocator.getCurrentPosition(
+        desiredAccuracy: LocationAccuracy.high,
+      );
+
+      currentLat = position.latitude;
+      currentLong = position.longitude;
+
       final location = {
         'time': DateTime.now(),
-        'latitude': currentLat ?? 0,
-        'longitude': currentLong ?? 0,
+        'latitude': currentLat,
+        'longitude': currentLong,
       };
       gpsLog.add(location);
       print("Tracked location: $location");
+
+      // Upload location to Firestore for admin access
+      final user = FirebaseAuth.instance.currentUser;
+      if (user != null) {
+        await FirebaseFirestore.instance
+            .collection('staff')
+            .doc(user.uid)
+            .collection('locationLogs')
+            .add({
+              'time': location['time'],
+              'latitude': location['latitude'],
+              'longitude': location['longitude'],
+            });
+      }
     });
   }
 
@@ -134,7 +191,26 @@ class _StaffPageState extends State<StaffPage> {
         lastIn = null;
       }
     }
+    // If currently punched in without punch out, count time till now
+    if (isPunchedIn && lastIn != null) {
+      total += DateTime.now().difference(lastIn);
+    }
     return total;
+  }
+
+  Future<void> _updateTotalWorkedInFirestore() async {
+    final user = FirebaseAuth.instance.currentUser;
+    if (user == null) return;
+
+    final totalDuration = getTotalWorkedDuration();
+
+    // Update total worked time and current location
+    await FirebaseFirestore.instance.collection('staff').doc(user.uid).update({
+      'totalWorkedSeconds': totalDuration.inSeconds,
+      'currentLatitude': currentLat,
+      'currentLongitude': currentLong,
+      'lastUpdated': FieldValue.serverTimestamp(),
+    });
   }
 
   void _logout() async {
@@ -203,13 +279,16 @@ class _StaffPageState extends State<StaffPage> {
                         if (locationName != null)
                           Text(
                             "Allocated Location: $locationName",
-                            style:
-                                GoogleFonts.raleway(fontWeight: FontWeight.bold),
+                            style: GoogleFonts.raleway(
+                              fontWeight: FontWeight.bold,
+                            ),
                           ),
                         Text(
-                            "Allocated Coords: (${assignedLat!.toStringAsFixed(5)}, ${assignedLong!.toStringAsFixed(5)})"),
+                          "Allocated Coords: (${assignedLat!.toStringAsFixed(5)}, ${assignedLong!.toStringAsFixed(5)})",
+                        ),
                         Text(
-                            "Your Coords: (${currentLat!.toStringAsFixed(5)}, ${currentLong!.toStringAsFixed(5)})"),
+                          "Your Coords: (${currentLat!.toStringAsFixed(5)}, ${currentLong!.toStringAsFixed(5)})",
+                        ),
                         const SizedBox(height: 10),
                         Text(
                           isNearOffice
@@ -273,9 +352,7 @@ class _StaffPageState extends State<StaffPage> {
                     return ListTile(
                       leading: Icon(
                         item['type'] == 'in' ? Icons.login : Icons.logout,
-                        color: item['type'] == 'in'
-                            ? Colors.green
-                            : Colors.red,
+                        color: item['type'] == 'in' ? Colors.green : Colors.red,
                       ),
                       title: Text(
                         "${item['type'] == 'in' ? 'In' : 'Out'} at ${formatter.format(item['time'])}",
@@ -287,7 +364,9 @@ class _StaffPageState extends State<StaffPage> {
               ),
               const SizedBox(height: 10),
               Text(
-                "Total Worked: ${totalWorked.inHours}h ${totalWorked.inMinutes.remainder(60)}m",
+                "Total Worked: "
+                "${totalWorked.inHours.toString().padLeft(2, '0')}:"
+                "${totalWorked.inMinutes.remainder(60).toString().padLeft(2, '0')}",
                 style: GoogleFonts.raleway(
                   fontSize: 16,
                   fontWeight: FontWeight.w600,
