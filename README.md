@@ -1,7 +1,5 @@
 # Staff Tracking System
 
-![App Banner](https://via.placeholder.com/800x200?text=Staff+Tracking+App) <!-- Replace with actual banner -->
-
 A real-time staff attendance and location tracking system with geofencing capabilities, built with Flutter and Firebase.
 
 ## ✨ Key Features
