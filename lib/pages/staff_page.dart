@@ -110,7 +110,7 @@ class _StaffPageState extends State<StaffPage> {
     );
 
     setState(() {
-      isNearOffice = distance <= 50000; // 50 km = 50000 meters
+      isNearOffice = distance <= 5000; // 5 km = 5000 meters
     });
   }
 
@@ -233,14 +233,18 @@ class _StaffPageState extends State<StaffPage> {
     return WillPopScope(
       onWillPop: () async => false, // prevent logout on back
       child: Scaffold(
+        backgroundColor: Colors.white,
         appBar: AppBar(
-          title: Text("Staff Dashboard", style: GoogleFonts.raleway()),
+          title: Text("Staff Dashboard", style: GoogleFonts.raleway(
+            fontWeight: FontWeight.w600,
+            color: Colors.black,
+            fontSize: 26,
+          )),
           centerTitle: true,
-          backgroundColor: Colors.black,
-          foregroundColor: Colors.white,
+          backgroundColor: Colors.white,
           leading: IconButton(
             onPressed: _logout,
-            icon: const Icon(Icons.logout, color: Colors.white),
+            icon: const Icon(Icons.logout, color: Colors.black),
           ),
         ),
         body: Padding(
@@ -292,8 +296,8 @@ class _StaffPageState extends State<StaffPage> {
                         const SizedBox(height: 10),
                         Text(
                           isNearOffice
-                              ? '✅ You are within 50 km radius.'
-                              : '❌ You are outside the 50 km radius.',
+                              ? '✅ You are within 5 km radius.'
+                              : '❌ You are outside the 5 km radius.',
                           style: GoogleFonts.raleway(
                             color: isNearOffice ? Colors.green : Colors.red,
                             fontWeight: FontWeight.w600,
@@ -314,6 +318,7 @@ class _StaffPageState extends State<StaffPage> {
                     style: GoogleFonts.raleway(
                       fontSize: 18,
                       fontWeight: FontWeight.bold,
+                      color: Colors.black
                     ),
                   ),
                 ),

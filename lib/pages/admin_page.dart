@@ -25,11 +25,10 @@ class _AdminPageState extends State<AdminPage> {
           style: GoogleFonts.raleway(
             fontSize: 26,
             fontWeight: FontWeight.w500,
-            color: Colors.black,
           ),
         ),
-        centerTitle: true,
         backgroundColor: Colors.white,
+        centerTitle: true,
         leading: IconButton(
           onPressed: _logout,
           icon: const Icon(Icons.logout, color: Colors.black),
@@ -38,52 +37,50 @@ class _AdminPageState extends State<AdminPage> {
       body: Container(
         color: Colors.white,
         padding: const EdgeInsets.all(16.0),
-        child: GridView.count(
-          crossAxisCount: 2,
-          mainAxisSpacing: 16,
-          crossAxisSpacing: 16,
+        child: Column(
           children: [
-            _adminTile(
-              icon: Icons.location_on,
-              title: 'Create Office Location',
-              onTap: () {
-                Navigator.pushNamed(context, '/createOffice');
-              },
+            SizedBox(
+              height: 200,
+              width: 200,
+              child: Image.asset('assets/admin.png'),
             ),
-            _adminTile(
-              icon: Icons.person_add,
-              title: 'Create Staff Account',
-              onTap: () {
-                Navigator.pushNamed(context, '/createStaff');
-              },
-            ),
-            _adminTile(
-              icon: Icons.assignment_ind,
-              title: 'Assign Staff to Location',
-              onTap: () {
-                Navigator.pushNamed(context, '/assignStaffLocation');
-              },
-            ),
-            _adminTile(
-              icon: Icons.map,
-              title: 'View Live Locations',
-              onTap: () {
-                Navigator.pushNamed(context, '/viewLocation');
-              },
-            ),
-            _adminTile(
-              icon: Icons.history,
-              title: 'Simulate Staff Movement',
-              onTap: () {
-                Navigator.pushNamed(context, '/simulateMovement');
-              },
-            ),
-            _adminTile(
-              icon: Icons.access_time,
-              title: 'Working Hours Report',
-              onTap: () {
-                Navigator.pushNamed(context, '/workSummary');
-              },
+            const SizedBox(height: 16),
+            Expanded(
+              child: GridView.count(
+                crossAxisCount: 2,
+                mainAxisSpacing: 16,
+                crossAxisSpacing: 16,
+                children: [
+                  _adminTile(
+                    icon: Icons.location_on,
+                    title: 'Create Office Location',
+                    onTap: () {
+                      Navigator.pushNamed(context, '/createOffice');
+                    },
+                  ),
+                  _adminTile(
+                    icon: Icons.person_add,
+                    title: 'Create Staff Account',
+                    onTap: () {
+                      Navigator.pushNamed(context, '/createStaff');
+                    },
+                  ),
+                  _adminTile(
+                    icon: Icons.assignment_ind,
+                    title: 'Assign Staff to Location',
+                    onTap: () {
+                      Navigator.pushNamed(context, '/assignStaffLocation');
+                    },
+                  ),
+                  _adminTile(
+                    icon: Icons.find_in_page_outlined,
+                    title: 'View Details',
+                    onTap: () {
+                      Navigator.pushNamed(context, '/viewDetails');
+                    },
+                  ),
+                ],
+              ),
             ),
           ],
         ),

@@ -22,81 +22,99 @@ class LocationMap extends StatelessWidget {
       currentLong != 0 ? currentLong : officeLong,
     );
 
+    final int totalWorkedSeconds = staffData['totalWorkedSeconds'] ?? 0;
+    final int hours = totalWorkedSeconds ~/ 3600;
+    final int minutes = (totalWorkedSeconds % 3600) ~/ 60;
+
     return Scaffold(
       appBar: AppBar(
-        title: const Text("Staff Location Map"),
-        backgroundColor: Colors.black,
-        foregroundColor: Colors.white,
+        title: Text("Staff Location Map", style: GoogleFonts.raleway(
+          fontWeight: FontWeight.w600,
+        ),),
+        backgroundColor: Colors.white,
+        centerTitle: true,
       ),
       backgroundColor: Colors.white,
-      body: Center(
-        child: Padding(
-          padding: const EdgeInsets.all(16.0),
-          child: Container(
-            height: 550,
-            width: double.infinity,
-            decoration: BoxDecoration(
-              borderRadius: BorderRadius.circular(20),
-              border: Border.all(color: Colors.black, width: 2),
-              boxShadow: [
-                BoxShadow(
-                  color: Colors.grey.shade300,
-                  blurRadius: 8,
-                  offset: const Offset(2, 4),
-                ),
-              ],
-            ),
-            child: ClipRRect(
-              borderRadius: BorderRadius.circular(20),
-              child: FlutterMap(
-                options: MapOptions(center: mapCenter, zoom: 15.0),
-                children: [
-                  TileLayer(
-                    urlTemplate:
-                        'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
-                    userAgentPackageName: 'com.example.app',
-                  ),
-                  MarkerLayer(
-                    markers: [
-                      Marker(
-                        point: LatLng(officeLat, officeLong),
-                        width: 80,
-                        height: 80,
-                        child: Column(
-                          children: const [
-                            Icon(
-                              Icons
-                                  .business_center_outlined, // More professional for office
-                              color: Colors.indigo,
-                              size: 38,
-                            ),
-                            Text("Office", style: TextStyle(fontSize: 12)),
-                          ],
-                        ),
-                      ),
-                      Marker(
-                        point: LatLng(currentLat, currentLong),
-                        width: 80,
-                        height: 80,
-                        child: Column(
-                          children: const [
-                            Icon(
-                              Icons
-                                  .location_pin, // Professional representation for staff
-                              color: Colors.deepOrange,
-                              size: 38,
-                            ),
-                            Text("Staff", style: TextStyle(fontSize: 12)),
-                          ],
-                        ),
-                      ),
-                    ],
+      body: Column(
+        children: [
+          const SizedBox(height: 10), // small padding above map
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 16),
+            child: Container(
+              height: 500,
+              width: double.infinity,
+              decoration: BoxDecoration(
+                borderRadius: BorderRadius.circular(20),
+                border: Border.all(color: Colors.black, width: 2),
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.grey.shade300,
+                    blurRadius: 8,
+                    offset: const Offset(2, 4),
                   ),
                 ],
               ),
+              child: ClipRRect(
+                borderRadius: BorderRadius.circular(20),
+                child: FlutterMap(
+                  options: MapOptions(center: mapCenter, zoom: 15.0),
+                  children: [
+                    TileLayer(
+                      urlTemplate:
+                          'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
+                      userAgentPackageName: 'com.example.app',
+                    ),
+                    MarkerLayer(
+                      markers: [
+                        Marker(
+                          point: LatLng(officeLat, officeLong),
+                          width: 80,
+                          height: 80,
+                          child: Column(
+                            children: const [
+                              Icon(
+                                Icons.business_center_outlined,
+                                color: Colors.indigo,
+                                size: 38,
+                              ),
+                              Text("Office", style: TextStyle(fontSize: 12)),
+                            ],
+                          ),
+                        ),
+                        Marker(
+                          point: LatLng(currentLat, currentLong),
+                          width: 80,
+                          height: 80,
+                          child: Column(
+                            children: const [
+                              Icon(
+                                Icons.location_pin,
+                                color: Colors.deepOrange,
+                                size: 38,
+                              ),
+                              Text("Staff", style: TextStyle(fontSize: 12)),
+                            ],
+                          ),
+                        ),
+                      ],
+                    ),
+                  ],
+                ),
+              ),
             ),
           ),
-        ),
+          const SizedBox(height: 16),
+          Center(
+            child: Text(
+              "Total Worked: ${hours}h ${minutes}m",
+              style: GoogleFonts.raleway(
+                fontSize: 18,
+                fontWeight: FontWeight.w600,
+                color: Colors.black87,
+              ),
+            ),
+          ),
+        ],
       ),
     );
   }
