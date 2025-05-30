@@ -1,4 +1,3 @@
-// main.dart
 import 'package:flutter/material.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:staff_tracking/utils/routes.dart';
@@ -40,6 +39,7 @@ class MyApp extends StatelessWidget {
     return MaterialApp(
       home: startPage,
       routes: Routes.getRoutes(),
+      debugShowCheckedModeBanner: false,
     );
   }
 }
